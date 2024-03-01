@@ -26,12 +26,12 @@ fn sub_angle(x: f32, y: f32) -> f32 {
 impl Controller {
     pub fn new() -> Self {
         Self {
-            x_pid: PID_Controller::default(),
-            z_pid: PID_Controller::default(),
-            roll_pid: PID_Controller::default(),
-            pitch_pid: PID_Controller::default(),
-            yaw_pid: PID_Controller::default(),
-            h_pid: PID_Controller::new(7.0, 0., 1.),
+            x_pid: PID_Controller::new(1.0, 0., 1.),
+            z_pid: PID_Controller::new(1.0, 0., 1.),
+            roll_pid: PID_Controller::new(1.0, 0., 1.),
+            pitch_pid: PID_Controller::new(1.0, 0., 1.),
+            yaw_pid: PID_Controller::new(1.0, 0., 1.),
+            h_pid: PID_Controller::new(8.0, 1., 1.),
         }
     }
 
@@ -69,13 +69,19 @@ impl Controller {
             .ctrl(sub_angle(target_pitch, drone_pitch), dt);
         let yaw_cmd = self.yaw_pid.ctrl(sub_angle(target_yaw, drone_yaw), dt);
         let thrust_cmd = self.h_pid.ctrl(target_h - drone_h, dt);
+        vec![
+            thrust_cmd + yaw_cmd + pitch_cmd + roll_cmd, // 右前
+            thrust_cmd - yaw_cmd + pitch_cmd - roll_cmd, // 左前
+            thrust_cmd - yaw_cmd - pitch_cmd + roll_cmd, // 右后
+            thrust_cmd + yaw_cmd - pitch_cmd - roll_cmd, // 左后
+        ]
         // vec![
-        //     thrust_cmd + yaw_cmd + pitch_cmd + roll_cmd, // 右前
-        //     thrust_cmd - yaw_cmd + pitch_cmd - roll_cmd, // 左前
-        //     thrust_cmd - yaw_cmd - pitch_cmd + roll_cmd, // 右后
-        //     thrust_cmd + yaw_cmd - pitch_cmd - roll_cmd, // 左后
+        //     thrust_cmd + yaw_cmd , // 右前
+        //     thrust_cmd - yaw_cmd , // 左前
+        //     thrust_cmd - yaw_cmd , // 右后
+        //     thrust_cmd + yaw_cmd , // 左后
         // ]
-        vec![thrust_cmd, thrust_cmd, thrust_cmd, thrust_cmd]
+        // vec![thrust_cmd, thrust_cmd, thrust_cmd, thrust_cmd]
     }
 }
 
@@ -111,6 +117,6 @@ impl PID_Controller {
 
 impl Default for PID_Controller {
     fn default() -> Self {
-        Self::new(0.0,0.0,0.0)
+        Self::new(0.0, 0.0, 0.0)
     }
 }
