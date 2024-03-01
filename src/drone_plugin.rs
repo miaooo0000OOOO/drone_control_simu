@@ -20,7 +20,8 @@ pub struct Drone;
 impl Plugin for DronePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, add_drone)
-            .add_systems(Update, (update_drone_force, log_drone));
+            .add_systems(Update, update_drone_force)
+            .add_systems(Update, log_drone);
     }
 }
 
@@ -42,16 +43,41 @@ fn add_drone(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn update_drone_force(
-    mut query_drone: Query<(&Transform, &mut ExternalForce, &mut Controller), With<Drone>>,
-    query_taget_point: Query<&Transform, With<TargetPoint>>,
+    mut query: Query<
+        (
+            &Transform,
+            Option<&mut ExternalForce>,
+            Option<&mut Controller>,
+        ),
+        Or<(With<Drone>, With<TargetPoint>)>,
+    >,
     time: Res<Time>,
 ) {
-    let (t, mut f, mut c) = query_drone.iter_mut().next().unwrap();
-    let target_pos = query_taget_point.iter().next().unwrap().translation;
+    let (mut t, mut f, mut c) = (
+        Transform::default(),
+        ExternalForce::default(),
+        Controller::new(),
+    );
+    let mut target_pos = Vec3::ZERO;
+    for it in query.iter_mut() {
+        if let (ts, Some(ef), Some(ct)) = it {
+            t = ts.clone();
+            f = ef.clone();
+            c = ct.clone();
+            break;
+        }
+    }
+
+    for it in query.iter() {
+        if let (ts, None, None) = it {
+            target_pos = ts.translation;
+            break;
+        }
+    }
 
     f.clear();
     let dt = time.delta_seconds();
-    let thrusts: Vec<f32> = c.ctrl_drone(&target_pos, t, dt);
+    let thrusts: Vec<f32> = c.ctrl_drone(&target_pos, &t, dt);
     for (i, (x, z)) in [(1., 1.), (-1., 1.), (1., -1.), (-1., -1.)]
         .iter()
         .enumerate()

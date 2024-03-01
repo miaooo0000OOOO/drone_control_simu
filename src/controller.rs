@@ -1,11 +1,7 @@
-use std::ops::Sub;
-
 use bevy::prelude::*;
-use bevy_xpbd_3d::{math::PI, parry::na::ComplexField, prelude::*};
+use bevy_xpbd_3d::math::PI;
 
-use crate::drone_plugin;
-
-#[derive(Debug, Component)]
+#[derive(Debug, Component, Clone)]
 pub struct Controller {
     x_pid: PID_Controller,
     z_pid: PID_Controller,
@@ -83,7 +79,7 @@ impl Controller {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PID_Controller {
     pub kp: f32,
     pub ki: f32,
