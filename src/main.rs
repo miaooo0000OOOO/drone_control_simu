@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy_xpbd_3d::prelude::*;
 
+pub mod controller;
 pub mod drone_plugin;
 pub mod environment_plugin;
 

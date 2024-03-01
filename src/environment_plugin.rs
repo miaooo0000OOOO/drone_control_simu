@@ -27,7 +27,7 @@ fn env_setup(
 
     // Target Point
     commands.spawn((
-        RigidBody::Static,
+        RigidBody::Kinematic,
         PbrBundle {
             mesh: meshes.add(Sphere::new(0.1)),
             material: materials.add(Color::rgb(1., 1., 0.)),
@@ -49,7 +49,7 @@ fn env_setup(
 
     // Camera
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(-4.0, 6.5, 8.0).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: Transform::from_xyz(-14.0, 16.5, 18.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
 }

@@ -13,23 +13,22 @@ pub struct Drone;
 impl Plugin for DronePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, add_drone)
-            .add_systems(Update, (update_drone_force));
+            .add_systems(Update, update_drone_force);
     }
 }
 
 fn add_drone(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    // mut meshes: ResMut<Assets<Mesh>>,
+    asset_server: Res<AssetServer>,
 ) {
     // Drone
     commands.spawn((
         RigidBody::Dynamic,
         AngularVelocity(Vec3::new(2.5, 3.4, 1.6)),
         Collider::cuboid(1.0, 1.0, 1.0),
-        PbrBundle {
-            mesh: meshes.add(Cuboid::default()),
-            material: materials.add(Color::rgb(0.8, 0.7, 0.6)),
+        SceneBundle {
+            scene: asset_server.load("Drone.glb#Scene0"),
             transform: Transform::from_xyz(0.0, 4.0, 0.0),
             ..default()
         },
@@ -41,11 +40,12 @@ fn add_drone(
 fn update_drone_force(mut query: Query<(&Transform, &mut ExternalForce), With<Drone>>) {
     for (t, mut f) in query.iter_mut() {
         f.clear();
-        // f.apply_force_at_point(
-        //     Vec3::new(0., DRONE_THRUST, 0.),
-        //     Vec3::new(x, y, z),
-        //     Vec3::ZERO,
-        // );
-        // f.apply_force_at_point(force, point, center_of_mass)
+        for (x, z) in [(1., 1.), (1., -1.), (-1., 1.), (-1., -1.)].iter() {
+            f.apply_force_at_point(
+                t.rotation * Vec3::new(0., DRONE_THRUST, 0.),
+                Vec3::new(x * DRONE_WIDTH / 2., 0., z * DRONE_WIDTH / 2.),
+                Vec3::ZERO,
+            );
+        }
     }
 }
