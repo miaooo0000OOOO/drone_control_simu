@@ -3,6 +3,9 @@ use bevy_xpbd_3d::prelude::*;
 
 pub struct EnvPlugin;
 
+#[derive(Debug, Component)]
+pub struct TargetPoint;
+
 impl Plugin for EnvPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, env_setup);
@@ -34,6 +37,7 @@ fn env_setup(
             transform: Transform::from_xyz(0.1, 3., 0.1),
             ..default()
         },
+        TargetPoint,
     ));
 
     // Light
