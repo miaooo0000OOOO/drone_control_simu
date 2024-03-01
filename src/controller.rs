@@ -110,6 +110,6 @@ impl PID_Controller {
 
 impl Default for PID_Controller {
     fn default() -> Self {
-        Self::new(0.0, 0.0, 0.0)
+        Self::new(-1.0, 0.0, 1.0)
     }
 }

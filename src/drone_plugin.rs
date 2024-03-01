@@ -30,7 +30,8 @@ fn add_drone(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         RigidBody::Dynamic,
         AngularVelocity(Vec3::new(2.5, 3.4, 1.6)),
-        Collider::cuboid(1.0, 1.0, 1.0),
+        // Collider::cuboid(1.0, 1.0, 1.0),
+        Collider::sphere(DRONE_WIDTH),
         SceneBundle {
             scene: asset_server.load("Drone.glb#Scene0"),
             transform: Transform::from_xyz(0.0, 4.0, 0.0),
@@ -75,8 +76,11 @@ fn update_drone_force(
         }
     }
 
-    f.clear();
+    // f.clear();
     let dt = time.delta_seconds();
+    if dt == 0. {
+        return;
+    }
     let thrusts: Vec<f32> = c.ctrl_drone(&target_pos, &t, dt);
     for (i, (x, z)) in [(1., 1.), (-1., 1.), (1., -1.), (-1., -1.)]
         .iter()
