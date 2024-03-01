@@ -31,7 +31,7 @@ impl Controller {
             roll_pid: PID_Controller::default(),
             pitch_pid: PID_Controller::default(),
             yaw_pid: PID_Controller::default(),
-            h_pid: PID_Controller::new(0.1, 0., 0.1),
+            h_pid: PID_Controller::new(7.0, 0., 1.),
         }
     }
 
@@ -68,7 +68,7 @@ impl Controller {
             .pitch_pid
             .ctrl(sub_angle(target_pitch, drone_pitch), dt);
         let yaw_cmd = self.yaw_pid.ctrl(sub_angle(target_yaw, drone_yaw), dt);
-        let thrust_cmd = self.h_pid.ctrl(sub_angle(target_h, drone_h), dt);
+        let thrust_cmd = self.h_pid.ctrl(target_h - drone_h, dt);
         // vec![
         //     thrust_cmd + yaw_cmd + pitch_cmd + roll_cmd, // 右前
         //     thrust_cmd - yaw_cmd + pitch_cmd - roll_cmd, // 左前
@@ -111,6 +111,6 @@ impl PID_Controller {
 
 impl Default for PID_Controller {
     fn default() -> Self {
-        Self::new(-1.0, 0.0, 1.0)
+        Self::new(0.0,0.0,0.0)
     }
 }

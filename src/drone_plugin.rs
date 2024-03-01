@@ -10,9 +10,9 @@ pub const DRONE_HEIGHT: f32 = 1.0;
 pub const DRONE_WIDTH: f32 = 0.5;
 pub const DRONE_THRUST: f32 = 9.5 / 4.0;
 
-pub const DRONE_START_POS: Vec3 = Vec3::new(0.0, 4.0, 0.0);
+pub const DRONE_START_POS: Vec3 = Vec3::new(0.0, 5.0, 0.0);
 
-pub const DRONE_THRUST_RANGE: Range<f32> = -2.5..2.5;
+pub const DRONE_THRUST_RANGE: Range<f32> = -5.0..5.0;
 
 pub struct DronePlugin;
 
@@ -22,7 +22,7 @@ pub struct Drone;
 impl Plugin for DronePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, add_drone)
-            // .add_systems(Update, update_drone_force)
+            .add_systems(Update, update_drone_force)
             .add_systems(Update, log_drone);
     }
 }
@@ -32,8 +32,8 @@ fn add_drone(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         RigidBody::Dynamic,
         AngularVelocity(Vec3::new(0., 0., 0.)),
-        Collider::cuboid(DRONE_WIDTH, DRONE_HEIGHT, DRONE_WIDTH),
-        // Collider::sphere(DRONE_WIDTH),
+        // Collider::cuboid(DRONE_WIDTH, DRONE_HEIGHT, DRONE_WIDTH),
+        Collider::sphere(DRONE_WIDTH),
         SceneBundle {
             scene: asset_server.load("Drone.glb#Scene0"),
             transform: Transform::from_xyz(DRONE_START_POS.x, DRONE_START_POS.y, DRONE_START_POS.z),

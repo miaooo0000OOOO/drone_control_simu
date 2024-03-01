@@ -21,7 +21,7 @@ fn setup_target_point(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let pos = Vec3::new(0.1, 3., 0.1);
+    let pos = Vec3::new(0., 8., 0.);
 
     // Target Point
     commands.spawn((
