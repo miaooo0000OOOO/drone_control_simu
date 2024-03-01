@@ -4,13 +4,15 @@ use bevy::prelude::*;
 use bevy_xpbd_3d::prelude::*;
 use controller::Controller;
 
-use crate::{controller, environment_plugin::TargetPoint};
+use crate::{controller, target_point_plugin::TargetPointRes};
 
 pub const DRONE_HEIGHT: f32 = 1.0;
 pub const DRONE_WIDTH: f32 = 0.5;
 pub const DRONE_THRUST: f32 = 9.5 / 4.0;
 
-pub const DRONE_THRUST_RANGE: Range<f32> = -5.0..5.0;
+pub const DRONE_START_POS: Vec3 = Vec3::new(0.0, 4.0, 0.0);
+
+pub const DRONE_THRUST_RANGE: Range<f32> = -2.5..2.5;
 
 pub struct DronePlugin;
 
@@ -20,7 +22,7 @@ pub struct Drone;
 impl Plugin for DronePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, add_drone)
-            .add_systems(Update, update_drone_force)
+            // .add_systems(Update, update_drone_force)
             .add_systems(Update, log_drone);
     }
 }
@@ -29,12 +31,12 @@ fn add_drone(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Drone
     commands.spawn((
         RigidBody::Dynamic,
-        AngularVelocity(Vec3::new(2.5, 3.4, 1.6)),
-        // Collider::cuboid(1.0, 1.0, 1.0),
-        Collider::sphere(DRONE_WIDTH),
+        AngularVelocity(Vec3::new(0., 0., 0.)),
+        Collider::cuboid(DRONE_WIDTH, DRONE_HEIGHT, DRONE_WIDTH),
+        // Collider::sphere(DRONE_WIDTH),
         SceneBundle {
             scene: asset_server.load("Drone.glb#Scene0"),
-            transform: Transform::from_xyz(0.0, 4.0, 0.0),
+            transform: Transform::from_xyz(DRONE_START_POS.x, DRONE_START_POS.y, DRONE_START_POS.z),
             ..default()
         },
         ExternalForce::default(),
@@ -44,39 +46,15 @@ fn add_drone(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn update_drone_force(
-    mut query: Query<
-        (
-            &Transform,
-            Option<&mut ExternalForce>,
-            Option<&mut Controller>,
-        ),
-        Or<(With<Drone>, With<TargetPoint>)>,
-    >,
+    mut query: Query<(&Transform, &mut ExternalForce, &mut Controller), With<Drone>>,
     time: Res<Time>,
+    target_point: Res<TargetPointRes>,
 ) {
-    let (mut t, mut f, mut c) = (
-        Transform::default(),
-        ExternalForce::default(),
-        Controller::new(),
-    );
-    let mut target_pos = Vec3::ZERO;
-    for it in query.iter_mut() {
-        if let (ts, Some(ef), Some(ct)) = it {
-            t = ts.clone();
-            f = ef.clone();
-            c = ct.clone();
-            break;
-        }
-    }
+    let (t, mut f, mut c) = query.single_mut();
 
-    for it in query.iter() {
-        if let (ts, None, None) = it {
-            target_pos = ts.translation;
-            break;
-        }
-    }
+    let target_pos = target_point.0;
 
-    // f.clear();
+    f.clear();
     let dt = time.delta_seconds();
     if dt == 0. {
         return;
@@ -94,10 +72,11 @@ fn update_drone_force(
     }
 }
 
-fn log_drone(query_drone: Query<(&Transform, &ExternalForce), With<Drone>>) {
-    let (t, f) = query_drone.iter().next().unwrap();
+fn log_drone(query_drone: Query<(Entity, &Transform, &ExternalForce), With<Drone>>) {
+    let (e, t, f) = query_drone.iter().next().unwrap();
     println!("Transform: {:?}", t);
     println!("EF: {:?}", f);
+    println!("Entity: {:?}", e);
 }
 
 fn restraint_in_range(x: f32, range: Range<f32>) -> f32 {
@@ -108,4 +87,5 @@ fn restraint_in_range(x: f32, range: Range<f32>) -> f32 {
     } else {
         x
     }
+    // 0.0
 }

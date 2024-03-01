@@ -3,9 +3,6 @@ use bevy_xpbd_3d::prelude::*;
 
 pub struct EnvPlugin;
 
-#[derive(Debug, Component)]
-pub struct TargetPoint;
-
 impl Plugin for EnvPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, env_setup);
@@ -28,18 +25,6 @@ fn env_setup(
         },
     ));
 
-    // Target Point
-    commands.spawn((
-        RigidBody::Kinematic,
-        PbrBundle {
-            mesh: meshes.add(Sphere::new(0.1)),
-            material: materials.add(Color::rgb(1., 1., 0.)),
-            transform: Transform::from_xyz(0.1, 3., 0.1),
-            ..default()
-        },
-        TargetPoint,
-    ));
-
     // Light
     commands.spawn(PointLightBundle {
         point_light: PointLight {
@@ -53,7 +38,7 @@ fn env_setup(
 
     // Camera
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(-14.0, 16.5, 18.0).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: Transform::from_xyz(-4.0, 6.5, 8.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
 }
