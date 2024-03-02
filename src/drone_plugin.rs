@@ -12,7 +12,7 @@ pub const DRONE_THRUST: f32 = 9.5 / 4.0;
 
 pub const DRONE_J_WING: f32 = 0.01;
 
-pub const DRONE_START_POS: Vec3 = Vec3::new(0.0, 5.0, 0.0);
+pub const DRONE_START_POS: Vec3 = Vec3::new(0.0, 3.0, 0.0);
 
 // pub const DRONE_THRUST_RANGE: Range<f32> = -5.0..5.0;
 pub const DRONE_THRUST_RANGE: Range<f32> = -5.0..5.0;
@@ -27,8 +27,7 @@ impl Plugin for DronePlugin {
         app.add_systems(Startup, add_drone)
             .add_systems(Update, update_drone)
             // .add_systems(Update, restraint_drone)
-            .add_systems(Update, log_drone)
-            ;
+            .add_systems(Update, log_drone);
     }
 }
 
@@ -90,7 +89,8 @@ fn update_drone(
     let target_pos = target_point.0;
 
     f.clear();
-    let dt = time.delta_seconds();
+    // let dt = time.delta_seconds();
+    let dt = 0.03;
     if dt == 0. {
         return;
     }

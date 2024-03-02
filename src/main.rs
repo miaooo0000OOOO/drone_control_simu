@@ -16,5 +16,6 @@ fn main() {
         .add_plugins(DronePlugin)
         .add_plugins(TargetPointPlugin)
         .add_plugins(EnvPlugin)
+        // .add_plugins(bevy_framepace::FramepacePlugin)
         .run();
 }
