@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_xpbd_3d::prelude::*;
 
-pub const TARGET_POSITION: Vec3 = Vec3::new(1., 8., 0.);
+pub const TARGET_POSITION: Vec3 = Vec3::new(1., 9., 1.);
 
 #[derive(Debug, Resource)]
 pub struct TargetPointRes(pub Vec3);
