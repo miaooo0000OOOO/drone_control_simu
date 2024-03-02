@@ -93,7 +93,7 @@ fn update_drone(
         return;
     }
     let thrusts: Vec<f32> = c.ctrl_drone(&target_pos, &t, dt);
-    for (i, (x, z)) in [(1., 1.), (-1., 1.), (1., -1.), (-1., -1.)]
+    for (i, (x, z)) in [(1., 1.), (1., -1.), (-1., 1.), (-1., -1.)]
         .iter()
         .enumerate()
     {
@@ -108,15 +108,15 @@ fn update_drone(
 
     let rotate_speed = [-thrusts[0], thrusts[1], thrusts[2], -thrusts[3]];
 
-    tor.apply_torque(Vec3::new(
-        DRONE_J_WING
-            * w.z
-            * (rotate_speed[0] - rotate_speed[1] + rotate_speed[2] - rotate_speed[3]),
-        0.,
-        DRONE_J_WING
-            * w.x
-            * (-rotate_speed[0] + rotate_speed[1] - rotate_speed[2] + rotate_speed[3]),
-    )); // 陀螺力矩
+    // tor.apply_torque(Vec3::new(
+    //     DRONE_J_WING
+    //         * w.z
+    //         * (rotate_speed[0] - rotate_speed[1] + rotate_speed[2] - rotate_speed[3]),
+    //     0.,
+    //     DRONE_J_WING
+    //         * w.x
+    //         * (-rotate_speed[0] + rotate_speed[1] - rotate_speed[2] + rotate_speed[3]),
+    // )); // 陀螺力矩
     tor.apply_torque(Vec3::new(0., rotate_speed.iter().sum(), 0.)); // 螺旋桨力矩
 }
 
@@ -131,9 +131,9 @@ fn log_drone(
 }
 
 fn restraint_in_range(x: f32, range: Range<f32>) -> f32 {
-    if x > range.end {
+    if range.end < x {
         range.end
-    } else if range.start < x {
+    } else if x < range.start {
         range.start
     } else {
         x

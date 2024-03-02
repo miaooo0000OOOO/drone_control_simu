@@ -17,6 +17,6 @@ bevy = { version = "0.13.0"}
 # [profile.dev.package."*"]
 # opt-level = 3
 
-[target.x86_64-unknown-linux-gnu]
-linker = "clang"
-rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]
+# [target.x86_64-unknown-linux-gnu]
+# linker = "clang"
+# rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]
