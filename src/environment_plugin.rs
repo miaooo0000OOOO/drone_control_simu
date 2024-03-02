@@ -1,6 +1,8 @@
 use bevy::prelude::*;
 use bevy_xpbd_3d::prelude::*;
 
+use crate::target_point_plugin::TARGET_POSITION;
+
 pub struct EnvPlugin;
 
 impl Plugin for EnvPlugin {
@@ -14,7 +16,7 @@ fn env_setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // Plane
+    // // Plane
     // commands.spawn((
     //     RigidBody::Static,
     //     Collider::cuboid(8.0, 0.002, 8.0),
@@ -38,7 +40,7 @@ fn env_setup(
 
     // Camera
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(-14.0, 16.5,18.0).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: Transform::from_xyz(-14.0, 16.5,20.0).looking_at(TARGET_POSITION, Vec3::Y),
         ..default()
     });
 }

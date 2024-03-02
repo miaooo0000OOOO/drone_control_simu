@@ -12,8 +12,9 @@ pub const DRONE_THRUST: f32 = 9.5 / 4.0;
 
 pub const DRONE_J_WING: f32 = 0.01;
 
-pub const DRONE_START_POS: Vec3 = Vec3::new(0.0, 5.0, 0.0);
+pub const DRONE_START_POS: Vec3 = Vec3::new(0.0, 7.0, 0.0);
 
+// pub const DRONE_THRUST_RANGE: Range<f32> = -5.0..5.0;
 pub const DRONE_THRUST_RANGE: Range<f32> = -5.0..5.0;
 
 pub struct DronePlugin;
@@ -26,7 +27,8 @@ impl Plugin for DronePlugin {
         app.add_systems(Startup, add_drone)
             .add_systems(Update, update_drone)
             // .add_systems(Update, restraint_drone)
-            .add_systems(Update, log_drone);
+            // .add_systems(Update, log_drone)
+            ;
     }
 }
 
@@ -38,6 +40,7 @@ fn add_drone(mut commands: Commands, asset_server: Res<AssetServer>) {
             AngularVelocity(Vec3::new(0., 0., 0.)),
             // Collider::cuboid(DRONE_WIDTH, DRONE_HEIGHT, DRONE_WIDTH),
             Collider::sphere(DRONE_WIDTH),
+            // ColliderDensity(0.0),
             SceneBundle {
                 scene: asset_server.load("Drone.glb#Scene0"),
                 transform: Transform::from_xyz(
@@ -51,6 +54,7 @@ fn add_drone(mut commands: Commands, asset_server: Res<AssetServer>) {
             ExternalTorque::default(),
             Drone,
             Controller::new(),
+            GravityScale(0.), // Mass(10.)
         ))
         .id();
 
@@ -61,7 +65,7 @@ fn add_drone(mut commands: Commands, asset_server: Res<AssetServer>) {
         ))
         .id();
 
-    commands.spawn(SphericalJoint::new(drone, fixed_point));
+    // commands.spawn(SphericalJoint::new(drone, fixed_point));
 }
 
 // fn restraint_drone(mut query: Query<&mut Transform, With<Drone>>) {
@@ -103,6 +107,7 @@ fn update_drone(
             Vec3::ZERO,
         );
     }
+    // f.apply_force(Vec3::new(0.,9.81,0.));
 
     tor.clear();
 
@@ -117,20 +122,20 @@ fn update_drone(
     //         * w.x
     //         * (-rotate_speed[0] + rotate_speed[1] - rotate_speed[2] + rotate_speed[3]),
     // )); // 陀螺力矩
-    tor.apply_torque(Vec3::new(0., rotate_speed.iter().sum(), 0.)); // 螺旋桨力矩
+    // tor.apply_torque(Vec3::new(0., rotate_speed.iter().sum(), 0.)); // 螺旋桨力矩
 }
 
 fn log_drone(
     query_drone: Query<(Entity, &Transform, &ExternalForce, &ExternalTorque), With<Drone>>,
 ) {
-    let (e, t, f, tor) = query_drone.iter().next().unwrap();
+    let (e, t, f, tor) = query_drone.single();
     println!("Transform: {:?}", t);
     println!("EF: {:?}", f);
     println!("Entity: {:?}", e);
     println!("ET: {:?}", tor);
 }
 
-fn restraint_in_range(x: f32, range: Range<f32>) -> f32 {
+pub fn restraint_in_range(x: f32, range: Range<f32>) -> f32 {
     if range.end < x {
         range.end
     } else if x < range.start {
