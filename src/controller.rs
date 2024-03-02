@@ -13,7 +13,7 @@ pub struct Controller {
 
 // angle x - y
 fn sub_angle(x: f32, y: f32) -> f32 {
-    let mut a = y - x;
+    let mut a = x - y;
     while a < -PI / 2. {
         a += 2. * PI;
     }
@@ -28,9 +28,9 @@ impl Controller {
         Self {
             x_pid: PID_Controller::new(1.0, 0., 1.),
             z_pid: PID_Controller::new(1.0, 0., 1.),
-            roll_pid: PID_Controller::new(1.0, 0., 1.),
-            pitch_pid: PID_Controller::new(1.0, 0., 1.),
-            yaw_pid: PID_Controller::new(1.0, 0., 1.),
+            roll_pid: PID_Controller::new(0.3, 0., 0.3),
+            pitch_pid: PID_Controller::new(0.3, 0., 0.3),
+            yaw_pid: PID_Controller::new(1.3, 0., 1.),
             h_pid: PID_Controller::new(8.0, 1., 1.),
         }
     }
@@ -63,24 +63,34 @@ impl Controller {
         }
         let target_roll = self.x_pid.ctrl(target_x - drone_x, dt);
         let target_pitch = self.z_pid.ctrl(target_z - drone_z, dt);
-        let roll_cmd = self.roll_pid.ctrl(target_roll - drone_roll, dt);
+
+        let target_roll = PI / 3.; //debug
+        let roll_cmd = self.roll_pid.ctrl(sub_angle(target_roll, drone_roll), dt);
+        // let roll_cmd = 0.; // debug
+
+        let target_pitch = PI / 3.; //debug
         let pitch_cmd = self
             .pitch_pid
             .ctrl(sub_angle(target_pitch, drone_pitch), dt);
+        // let pitch_cmd = 0.; // debug
+
+        let target_yaw = PI / 2.; // debug
         let yaw_cmd = self.yaw_pid.ctrl(sub_angle(target_yaw, drone_yaw), dt);
+        // let yaw_cmd = 0.; // debug
         let thrust_cmd = self.h_pid.ctrl(target_h - drone_h, dt);
-        vec![
-            thrust_cmd + yaw_cmd + pitch_cmd + roll_cmd, // 右前
-            thrust_cmd - yaw_cmd + pitch_cmd - roll_cmd, // 左前
-            thrust_cmd - yaw_cmd - pitch_cmd + roll_cmd, // 右后
-            thrust_cmd + yaw_cmd - pitch_cmd - roll_cmd, // 左后
-        ]
         // vec![
-        //     thrust_cmd + yaw_cmd , // 右前
-        //     thrust_cmd - yaw_cmd , // 左前
-        //     thrust_cmd - yaw_cmd , // 右后
-        //     thrust_cmd + yaw_cmd , // 左后
+        //     thrust_cmd + yaw_cmd + pitch_cmd + roll_cmd, // 右前
+        //     thrust_cmd - yaw_cmd + pitch_cmd - roll_cmd, // 左前
+        //     thrust_cmd - yaw_cmd - pitch_cmd + roll_cmd, // 右后
+        //     thrust_cmd + yaw_cmd - pitch_cmd - roll_cmd, // 左后
         // ]
+        let res = vec![
+            yaw_cmd + pitch_cmd + roll_cmd,  // 右前
+            -yaw_cmd - pitch_cmd + roll_cmd, // 左前
+            -yaw_cmd + pitch_cmd - roll_cmd, // 右后
+            yaw_cmd - pitch_cmd - roll_cmd,  // 左后
+        ];
+        res
         // vec![thrust_cmd, thrust_cmd, thrust_cmd, thrust_cmd]
     }
 }

@@ -10,6 +10,8 @@ pub const DRONE_HEIGHT: f32 = 1.0;
 pub const DRONE_WIDTH: f32 = 0.5;
 pub const DRONE_THRUST: f32 = 9.5 / 4.0;
 
+pub const DRONE_J_WING: f32 = 0.01;
+
 pub const DRONE_START_POS: Vec3 = Vec3::new(0.0, 5.0, 0.0);
 
 pub const DRONE_THRUST_RANGE: Range<f32> = -5.0..5.0;
@@ -22,35 +24,66 @@ pub struct Drone;
 impl Plugin for DronePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, add_drone)
-            .add_systems(Update, update_drone_force)
+            .add_systems(Update, update_drone)
+            // .add_systems(Update, restraint_drone)
             .add_systems(Update, log_drone);
     }
 }
 
 fn add_drone(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Drone
-    commands.spawn((
-        RigidBody::Dynamic,
-        AngularVelocity(Vec3::new(0., 0., 0.)),
-        // Collider::cuboid(DRONE_WIDTH, DRONE_HEIGHT, DRONE_WIDTH),
-        Collider::sphere(DRONE_WIDTH),
-        SceneBundle {
-            scene: asset_server.load("Drone.glb#Scene0"),
-            transform: Transform::from_xyz(DRONE_START_POS.x, DRONE_START_POS.y, DRONE_START_POS.z),
-            ..default()
-        },
-        ExternalForce::default(),
-        Drone,
-        Controller::new(),
-    ));
+    let drone = commands
+        .spawn((
+            RigidBody::Dynamic,
+            AngularVelocity(Vec3::new(0., 0., 0.)),
+            // Collider::cuboid(DRONE_WIDTH, DRONE_HEIGHT, DRONE_WIDTH),
+            Collider::sphere(DRONE_WIDTH),
+            SceneBundle {
+                scene: asset_server.load("Drone.glb#Scene0"),
+                transform: Transform::from_xyz(
+                    DRONE_START_POS.x,
+                    DRONE_START_POS.y,
+                    DRONE_START_POS.z,
+                ),
+                ..default()
+            },
+            ExternalForce::default(),
+            ExternalTorque::default(),
+            Drone,
+            Controller::new(),
+        ))
+        .id();
+
+    let fixed_point = commands
+        .spawn((
+            RigidBody::Static,
+            Position::from_xyz(DRONE_START_POS.x, DRONE_START_POS.y, DRONE_START_POS.z),
+        ))
+        .id();
+
+    commands.spawn(SphericalJoint::new(drone, fixed_point));
 }
 
-fn update_drone_force(
-    mut query: Query<(&Transform, &mut ExternalForce, &mut Controller), With<Drone>>,
+// fn restraint_drone(mut query: Query<&mut Transform, With<Drone>>) {
+//     let mut t = query.single_mut();
+//     t.translation = DRONE_START_POS;
+// }
+
+fn update_drone(
+    mut query: Query<
+        (
+            &Transform,
+            &AngularVelocity,
+            &mut ExternalForce,
+            &mut ExternalTorque,
+            &mut Controller,
+        ),
+        With<Drone>,
+    >,
     time: Res<Time>,
     target_point: Res<TargetPointRes>,
 ) {
-    let (t, mut f, mut c) = query.single_mut();
+    let (t, w, mut f, mut tor, mut c) = query.single_mut();
 
     let target_pos = target_point.0;
 
@@ -70,13 +103,31 @@ fn update_drone_force(
             Vec3::ZERO,
         );
     }
+
+    tor.clear();
+
+    let rotate_speed = [-thrusts[0], thrusts[1], thrusts[2], -thrusts[3]];
+
+    tor.apply_torque(Vec3::new(
+        DRONE_J_WING
+            * w.z
+            * (rotate_speed[0] - rotate_speed[1] + rotate_speed[2] - rotate_speed[3]),
+        0.,
+        DRONE_J_WING
+            * w.x
+            * (-rotate_speed[0] + rotate_speed[1] - rotate_speed[2] + rotate_speed[3]),
+    )); // 陀螺力矩
+    tor.apply_torque(Vec3::new(0., rotate_speed.iter().sum(), 0.)); // 螺旋桨力矩
 }
 
-fn log_drone(query_drone: Query<(Entity, &Transform, &ExternalForce), With<Drone>>) {
-    let (e, t, f) = query_drone.iter().next().unwrap();
+fn log_drone(
+    query_drone: Query<(Entity, &Transform, &ExternalForce, &ExternalTorque), With<Drone>>,
+) {
+    let (e, t, f, tor) = query_drone.iter().next().unwrap();
     println!("Transform: {:?}", t);
     println!("EF: {:?}", f);
     println!("Entity: {:?}", e);
+    println!("ET: {:?}", tor);
 }
 
 fn restraint_in_range(x: f32, range: Range<f32>) -> f32 {
