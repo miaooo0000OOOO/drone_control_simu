@@ -27,3 +27,9 @@ wasm-bindgen --no-typescript --target web \
     --out-name "drone_simu" \
     target/wasm32-unknown-unknown/release/drone_control_simu.wasm
 ```
+
+## 鸣谢
+
+感谢燕山大学网络信息协会提供的服务器和sgt同学提供的电脑
+
+♥️
