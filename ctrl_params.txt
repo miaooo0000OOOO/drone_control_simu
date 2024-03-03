@@ -1,0 +1,6 @@
+x_pid: PID_Controller::new(0.05, 0.01, 0.1),
+z_pid: PID_Controller::new(0.05, 0.01, 0.1),
+pitch_pid: PID_Controller::new(0.1, 0., 0.1),
+roll_pid: PID_Controller::new(0.1, 0., 0.1),
+yaw_pid: PID_Controller::new(0.02, 0., 0.01),
+h_pid: PID_Controller::new(8.0, 1., 1.),

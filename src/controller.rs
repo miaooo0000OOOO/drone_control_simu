@@ -1,4 +1,4 @@
-use std::ops::{Range, RangeFull};
+use std::{fs, ops::Range};
 
 use bevy::prelude::*;
 use bevy_xpbd_3d::math::PI;
@@ -35,13 +35,83 @@ impl Controller {
         Self {
             x_pid: PID_Controller::new(0.05, 0.01, 0.1),
             z_pid: PID_Controller::new(0.05, 0.01, 0.1),
-            // roll_pid: PID_Controller::new(0.6, 0.05, 1.),
-            // pitch_pid: PID_Controller::new(0.6, 0.05, 1.),
             pitch_pid: PID_Controller::new(0.1, 0., 0.1),
             roll_pid: PID_Controller::new(0.1, 0., 0.1),
             yaw_pid: PID_Controller::new(0.02, 0., 0.01),
             h_pid: PID_Controller::new(8.0, 1., 1.),
-            // h_pid: PID_Controller::new(0.1, 0., 0.),
+        }
+    }
+
+    pub fn from_config_file(path: &str) -> Self {
+        let config_file = match fs::read_to_string(path) {
+            Ok(f) => f,
+            Err(e) => panic!("Read controller config file error: {}", e),
+        };
+        let mut x_pid_p: Option<(f32, f32, f32)> = None;
+        let mut z_pid_p: Option<(f32, f32, f32)> = None;
+        let mut h_pid_p: Option<(f32, f32, f32)> = None;
+        let mut pitch_pid_p: Option<(f32, f32, f32)> = None;
+        let mut roll_pid_p: Option<(f32, f32, f32)> = None;
+        let mut yaw_pid_p: Option<(f32, f32, f32)> = None;
+
+        for (line_num, line) in config_file.lines().enumerate() {
+            let controller_name = line.split(":").collect::<Vec<_>>()[0].trim();
+            let lp_index = match line.find('(') {
+                Some(i) => i,
+                None => panic!(
+                    "Controller config file format error in line {}\nline str: {}",
+                    line_num, line
+                ),
+            };
+            let rp_index = match line.find(')') {
+                Some(i) => i,
+                None => panic!(
+                    "Controller config file format error in line {}\nline str: {}",
+                    line_num, line
+                ),
+            };
+            let params = &line[lp_index + 1..rp_index];
+            let params = params
+                .split(',')
+                .map(str::trim)
+                .map(|s| match s.parse::<f32>() {
+                    Ok(f) => f,
+                    Err(e) => panic!(
+                        "Controller config file format error in line {}\nline str: {}\nParse number error {}",
+                        line_num, line, e
+                    ),
+                })
+                .collect::<Vec<f32>>();
+            assert_eq!(params.len(), 3);
+            let params = [params[0], params[1], params[2]];
+            match controller_name {
+                "x_pid" => x_pid_p = Some(params.into()),
+                "z_pid" => z_pid_p = Some(params.into()),
+                "h_pid" => h_pid_p = Some(params.into()),
+                "pitch_pid" => pitch_pid_p = Some(params.into()),
+                "roll_pid"=>roll_pid_p = Some(params.into()),
+                "yaw_pid"=>yaw_pid_p = Some(params.into()),
+                _=>panic!(
+                    "Controller config file error in line {}\nline str: {}\nController name not exist",
+                    line_num, line)
+            }
+        }
+        if x_pid_p.is_none()
+            || z_pid_p.is_none()
+            || h_pid_p.is_none()
+            || pitch_pid_p.is_none()
+            || roll_pid_p.is_none()
+            || yaw_pid_p.is_none()
+        {
+            panic!("Controller config file error: lack controller param",)
+        }
+        Self {
+            x_pid: PID_Controller::from_tuple(x_pid_p.unwrap()),
+            z_pid: PID_Controller::from_tuple(z_pid_p.unwrap()),
+            h_pid: PID_Controller::from_tuple(h_pid_p.unwrap()),
+            pitch_pid: PID_Controller::from_tuple(pitch_pid_p.unwrap()),
+            roll_pid: PID_Controller::from_tuple(roll_pid_p.unwrap()),
+            yaw_pid: PID_Controller::from_tuple(yaw_pid_p.unwrap()),
         }
     }
 
@@ -89,16 +159,12 @@ impl Controller {
         // let target_yaw = PI / 3.; // debug
         // let yaw_cmd = self.yaw_pid.ctrl(sub_angle(target_yaw, drone_yaw), dt);
         // println!("ty: {} dy: {} yc: {}", target_yaw, drone_yaw, yaw_cmd);
-        // let yaw_cmd = 0.; // debug
+        let yaw_cmd = 0.; // debug
         let thrust_cmd = self.h_pid.ctrl(target_h - drone_h, dt);
         let thrust_cmd = restraint_in_range(
             thrust_cmd,
             DRONE_THRUST_RANGE.start * 0.6..DRONE_THRUST_RANGE.end * 0.6,
         );
-        // if thrust_cmd.abs() > 3. {
-        //     println!("???");
-        // }
-        // println!("tc:{} th:{} dh:{} dt:{}", thrust_cmd, target_h, drone_h, dt);
         // vec![
         //     thrust_cmd + yaw_cmd + pitch_cmd + roll_cmd, // 右前
         //     thrust_cmd - yaw_cmd + pitch_cmd - roll_cmd, // 左前
@@ -112,10 +178,10 @@ impl Controller {
         //     thrust_cmd - yaw_cmd - pitch_cmd - roll_cmd, // 左后
         // ];
         let res = vec![
-            thrust_cmd + pitch_cmd - roll_cmd, // 右前
-            thrust_cmd + pitch_cmd + roll_cmd, // 左前
-            thrust_cmd - pitch_cmd - roll_cmd, // 右后
-            thrust_cmd - pitch_cmd + roll_cmd, // 左后
+            thrust_cmd + yaw_cmd + pitch_cmd - roll_cmd, // 右前
+            thrust_cmd - yaw_cmd + pitch_cmd + roll_cmd, // 左前
+            thrust_cmd - yaw_cmd - pitch_cmd - roll_cmd, // 右后
+            thrust_cmd + yaw_cmd - pitch_cmd + roll_cmd, // 左后
         ];
         res
         // vec![thrust_cmd, thrust_cmd, thrust_cmd, thrust_cmd]
@@ -141,6 +207,10 @@ impl PID_Controller {
             prev_e: 0.,
             integration: 0.,
         }
+    }
+
+    pub fn from_tuple(params: (f32, f32, f32)) -> Self {
+        Self::new(params.0, params.1, params.2)
     }
 
     pub fn ctrl(&mut self, error: f32, dt: f32) -> f32 {

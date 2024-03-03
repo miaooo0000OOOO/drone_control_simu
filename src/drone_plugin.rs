@@ -51,7 +51,7 @@ fn add_drone(mut commands: Commands, asset_server: Res<AssetServer>) {
             ExternalForce::default(),
             ExternalTorque::default(),
             Drone,
-            Controller::new(),
+            Controller::from_config_file("ctrl_params.txt"),
         ))
         .id();
 
